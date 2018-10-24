@@ -80,6 +80,7 @@ describe('lookupToken', function () {
   it('should return null when looking up a non-existant token', async function () {
     let token = await lookupToken(
       config.s3bucket,
+      config.s3prefixPhoneNumbers,
       'INVALIDfjkdsaljfkslj')
     assert.equal(token, null)
   });

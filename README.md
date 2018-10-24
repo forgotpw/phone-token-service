@@ -24,6 +24,9 @@ const phoneTokenService = new PhoneTokenService({
 })
 const phone = '212-555-1212'
 const token = await phoneTokenService.getTokenFromPhone(phone)
+phoneTokenService.getTokenFromPhone(phone).then((token) => {
+  console.log(`Token for ${phone} is ${token}`)
+})
 ```
 
 ### Get a Phone Number from a Token
@@ -39,14 +42,19 @@ const phoneTokenService = new PhoneTokenService({
   defaultCountryCode: 'US'
 })
 const userToken = 'UT39jsklsjsu2389u3832jljklcjfewoizlz'
-const phone = await phoneTokenService.getPhoneFromToken(userToken)
+phoneTokenService.getPhoneFromToken(userToken).then((phone) => {
+  console.log(`Phone for ${token} is ${phone}`)
+})
 ```
 
 ## Testing
 
 ```shell
 $ pip install iam-starter
-$ iam-starter --role role-ops-devops --profile fpwdev --command npm test 
+$ iam-starter \
+  --role my-iam-role-with-access \
+  --profile profile-with-access-to-assume-role \
+  --command npm test 
 ```
 
 ## License

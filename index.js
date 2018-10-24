@@ -19,7 +19,7 @@ class PhoneTokenService {
   // phone can be raw, will be converted to E164 format
   async getTokenFromPhone(phone) {
     const e164 = convertPhoneToE164Format(phone, this.defaultCountryCode)
-    let token = await lookupToken(this.s3bucket, e164)
+    let token = await lookupToken(this.s3bucket, this.s3prefixPhoneNumbers, e164)
     if (token != null) {
       logger.debug(`Retrieved existing user token from raw phone: ${token}`)
     } else {
@@ -28,7 +28,6 @@ class PhoneTokenService {
       await putS3(this.s3bucket, `${this.s3prefixTokens}${token}`, e164)
       logger.debug(`Storing e164 for ${token} s3://${this.s3bucket}/(key masked)`)
       await putS3(this.s3bucket, `${this.s3prefixPhoneNumbers}${e164.replace('+', 'P')}`, token)
-    
     }
     return token
   }
@@ -85,10 +84,10 @@ function createToken(secret, phone, defaultCountryCode) {
   return token
 }
 
-async function lookupToken(bucket, e164) {
+async function lookupToken(bucket, s3prefix, e164) {
   let data = null
   // plus symbol on s3 may cause issues
-  const s3key = this.s3prefixPhoneNumbers + e164.replace('+', 'P')
+  const s3key = s3prefix + e164.replace('+', 'P')
   try {
     const s3 = new AWS.S3()
     data = await s3.getObject({
