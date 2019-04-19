@@ -1,6 +1,6 @@
 {
   "name": "phone-token-service",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A library for storing and retrieving of pseudo anonymised tokens from phone numbers, supporting standardized E164 phone number formatting and S3 backed storage for the lookup data.",
   "main": "index.js",
   "author": "dwkerwin@gmail.com",

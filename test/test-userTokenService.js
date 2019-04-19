@@ -111,3 +111,20 @@ describe('getPhoneFromToken', function () {
     assert.equal(phone, '+12125551212')
   });
 });
+
+describe('doesTokenExistForPhone', function () {
+  this.timeout(10000)
+  it('should return false for an unknown phone number', async function () {
+    const phoneTokenService = new PhoneTokenService(config)
+    const exists = await phoneTokenService.doesTokenExistForPhone('212-123-7201')
+    assert.equal(exists, false)
+  });
+  it('should return true for a known phone number', async function () {
+    const phoneTokenService = new PhoneTokenService(config)
+    const phone = '212-555-1212'
+    // getTokenFromPhone will create the token if it doesn't already exist
+    const token = await phoneTokenService.getTokenFromPhone(phone)
+    const exists = await phoneTokenService.doesTokenExistForPhone(phone)
+    assert.equal(exists, true)
+  });
+});

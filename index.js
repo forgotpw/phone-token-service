@@ -16,7 +16,7 @@ class PhoneTokenService {
       this.s3prefixPhoneNumbers += '/'
   }
 
-  // checks if a token alrady exists for the given phone.  this is needed because
+  // checks if a token already exists for the given phone.  this is needed because
   // the first call to getTokenFromPhone stores a token for that phone, so if you
   // want to know if it's the first time this phone has ever been used you will
   // need to call this first
