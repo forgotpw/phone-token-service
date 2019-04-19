@@ -13,7 +13,7 @@ npm install --save phone-token-service
 ### Get a Token from a Phone Number
 
 ```javascript
-const PhoneTokenService = require('phone-token-service')
+const PhoneTokenService = require('phone-token-service');
 const phoneTokenService = new PhoneTokenService({
   // salt for hashing algorithm 
   tokenHashHmac: 'mysecret',
@@ -21,18 +21,16 @@ const phoneTokenService = new PhoneTokenService({
   s3bucket: 'forgotpw-usertokens-dev',
   // retrieve country code from ip address via https://ipapi.co/country/
   defaultCountryCode: 'US'
-})
-const phone = '212-555-1212'
-const token = await phoneTokenService.getTokenFromPhone(phone)
-phoneTokenService.getTokenFromPhone(phone).then((token) => {
-  console.log(`Token for ${phone} is ${token}`)
-})
+});
+const phone = '212-555-1212';
+const token = await phoneTokenService.getTokenFromPhone(phone);
+console.log(`Token for ${phone} is ${token}`);
 ```
 
 ### Get a Phone Number from a Token
 
 ```javascript
-const PhoneTokenService = require('phone-token-service')
+const PhoneTokenService = require('phone-token-service');
 const phoneTokenService = new PhoneTokenService({
   // salt for hashing algorithm 
   tokenHashHmac: 'mysecret',
@@ -40,18 +38,18 @@ const phoneTokenService = new PhoneTokenService({
   s3bucket: 'forgotpw-usertokens-dev',
   // retrieve country code from ip address via https://ipapi.co/country/
   defaultCountryCode: 'US'
-})
-const userToken = 'UT39jsklsjsu2389u3832jljklcjfewoizlz'
-phoneTokenService.getPhoneFromToken(userToken).then((phone) => {
-  console.log(`Phone for ${token} is ${phone}`)
-})
+});
+const userToken = 'UT39jsklsjsu2389u3832jljklcjfewoizlz';
+const phone = phoneTokenService.getPhoneFromToken(userToken);
+console.log(`Phone for ${token} is ${phone}`);
 ```
 
 ## Testing
 
 ```shell
-$ pip install iam-starter
-$ iam-starter \
+# pip install iam-starter
+npm install
+iam-starter \
   --role my-iam-role-with-access \
   --profile profile-with-access-to-assume-role \
   --command npm test 

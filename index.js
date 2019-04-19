@@ -16,7 +16,24 @@ class PhoneTokenService {
       this.s3prefixPhoneNumbers += '/'
   }
 
+  // checks if a token alrady exists for the given phone.  this is needed because
+  // the first call to getTokenFromPhone stores a token for that phone, so if you
+  // want to know if it's the first time this phone has ever been used you will
+  // need to call this first
+  async doesTokenExistForPhone(phone) {
+    const e164 = convertPhoneToE164Format(phone, this.defaultCountryCode)
+    let token = await lookupToken(this.s3bucket, this.s3prefixPhoneNumbers, e164)
+    if (token == null) {
+      logger.debug(`No token exists for: ${phone}`)
+      return false;
+    } else {
+      logger.debug(`Token exists for: ${phone}`)
+      return true;
+    }
+  }
+
   // phone can be raw, will be converted to E164 format
+  // will create (and persist) a token on s3 if one doesn't already exist
   async getTokenFromPhone(phone) {
     const e164 = convertPhoneToE164Format(phone, this.defaultCountryCode)
     let token = await lookupToken(this.s3bucket, this.s3prefixPhoneNumbers, e164)
