@@ -10,6 +10,7 @@ class PhoneTokenService {
     this.s3bucket = config.s3bucket
     this.s3prefixTokens = config.s3prefixTokens || 'tokens/'
     this.s3prefixPhoneNumbers = config.s3prefixPhoneNumbers || 'e164/'
+    this.s3prefixAlexaUserIds = config.s3prefixAlexaUserIds || 'alexa/'
     if (!this.s3prefixTokens.endsWith('/'))
       this.s3prefixTokens += '/'
     if (!this.s3prefixPhoneNumbers.endsWith('/'))
@@ -75,6 +76,39 @@ class PhoneTokenService {
     return data.Body.toString()
   }
 
+  // to associate a phone number with a Alexa ID, it is a two step process.
+  // 1. get the token from the phone number once Alexa has retrieved the number
+  // 2. set the Alexa userId from the token
+  async setAlexaUserIdFromToken(token, alexaUserId) {
+    logger.debug(`Storing alexa user id file for Alexa userId ${alexaUserId} in bucket ${this.s3bucket}`)
+    await putS3(this.s3bucket, `${this.s3prefixAlexaUserIds}${alexaUserId}`, token)
+  }
+
+  // will return token from alexa user id
+  async getTokenFromAlexaUserId(alexaUserId) {
+    let data = null
+    const s3key = this.s3prefixAlexaUserIds + alexaUserId
+    try {
+      const s3 = new AWS.S3()
+      data = await s3.getObject({
+        Bucket: this.s3bucket,
+        Key: s3key
+      }).promise()
+    }
+    catch (err) {
+      if (err.code == 'NoSuchKey') {
+        let msg = `Tried looking a non-existent alexa user id ${s3key}`
+        logger.debug(msg)
+        return ''
+      } else {
+        let msg = `Error reading alexa user id file at s3://${this.s3bucket}/${s3key}: ${err}`
+        logger.error(msg)
+        throw err
+      }
+    }
+    logger.debug(`Retrieved token from alexa user id file at s3://${this.s3bucket}/${s3key}`)
+    return data.Body.toString()
+  }
 }
 
 //

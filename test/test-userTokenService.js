@@ -128,3 +128,25 @@ describe('doesTokenExistForPhone', function () {
     assert.equal(exists, true)
   });
 });
+
+describe('getTokenFromAlexaUserId', function () {
+  this.timeout(10000)
+  it('should return a token from an alexa user id that has a token set', async function () {
+    const phoneTokenService = new PhoneTokenService(config)
+    // getTokenFromPhone will create the token if it doesn't already exist
+    const phone = '212-555-1212'
+    // getTokenFromPhone will create the token if it doesn't already exist
+    const token = await phoneTokenService.getTokenFromPhone(phone)
+    await phoneTokenService.setAlexaUserIdFromToken(token, 'testalexaid')
+    // now try to read the token back from the alexa id
+    let retrievedToken = await phoneTokenService.getTokenFromAlexaUserId('testalexaid')
+    assert.isNotNull(retrievedToken)
+    assert.equal(retrievedToken, token)
+  });
+  it('should return empty string if alexa user id does not exist on s3', async function () {
+    const phoneTokenService = new PhoneTokenService(config)
+    let retrievedToken = await phoneTokenService.getTokenFromAlexaUserId('makesurethisdoesnotexist')
+    assert.isNotNull(retrievedToken)
+    assert.equal(retrievedToken, '')
+  });
+});
