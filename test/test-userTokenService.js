@@ -2,6 +2,7 @@ const chai = require('chai')
 const assert = chai.assert;
 const PhoneTokenService = require('../index')
 const rewire = require('rewire')
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3')
 const rewired = rewire('../index');
 const convertPhoneToE164Format = rewired.__get__('convertPhoneToE164Format')
 const lookupToken = rewired.__get__('lookupToken');
@@ -76,7 +77,41 @@ describe('createToken', function () {
   });
 });
 
+// Written in 2018 by the aws-sdk v2 version of this library: test-e164/P12125551212 in
+// forgotpw-usertokens-dev holds this token, so the same phone must keep giving it.
+const TOKEN_FOR_212_555_1212 = 'UTa0fbbbe51d25a01f4fc1bfb719d6027095b6e1e96fd94d4d78badace50419f13'
+
+describe('token stability', function () {
+  this.timeout(10000)
+  it('should create the same token as earlier versions for a known phone', function () {
+    assert.equal(createToken(config.tokenHashHmac, '212-555-1212', 'US'), TOKEN_FOR_212_555_1212)
+  });
+  it('should read the token an earlier version stored for a known phone', async function () {
+    const phoneTokenService = new PhoneTokenService(config)
+    assert.equal(await phoneTokenService.getTokenFromPhone('(212) 555-1212'), TOKEN_FOR_212_555_1212)
+  });
+  it('should store a new phone under the same S3 keys and bodies as earlier versions', async function () {
+    const phoneTokenService = new PhoneTokenService(config)
+    // earlier runs leave numbers behind; use one that has no token yet, so this writes
+    let phone
+    do {
+      phone = `212-555-${Math.floor(1000 + Math.random() * 9000)}`
+    } while (await phoneTokenService.doesTokenExistForPhone(phone))
+    const e164 = `+1${phone.replace(/-/g, '')}`
+    const token = await phoneTokenService.getTokenFromPhone(phone)
+    assert.equal(token, createToken(config.tokenHashHmac, phone, 'US'))
+    const s3 = new S3Client({})
+    for (const [Key, body] of [[`test-tokens/${token}`, e164], [`test-e164/${e164.replace('+', 'P')}`, token]]) {
+      const object = await s3.send(new GetObjectCommand({ Bucket: config.s3bucket, Key }))
+      assert.equal(await object.Body.transformToString(), body)
+      assert.equal(object.ContentType, 'text/plain')
+      assert.equal(object.ServerSideEncryption, 'AES256')
+    }
+  });
+});
+
 describe('lookupToken', function () {
+  this.timeout(10000)
   it('should return null when looking up a non-existant token', async function () {
     let token = await lookupToken(
       config.s3bucket,

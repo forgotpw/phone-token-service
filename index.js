@@ -1,7 +1,10 @@
-const AWS = require('aws-sdk');
+const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const logger = require('./logger')
 const libphonenumber = require('libphonenumber-js')
 const crypto = require('crypto');
+
+// credentials and region come from the environment (AWS_REGION in Lambda) or the AWS profile
+const s3 = new S3Client({})
 
 class PhoneTokenService {
   constructor(config) {
@@ -55,14 +58,13 @@ class PhoneTokenService {
     let data = null
     const s3key = this.s3prefixTokens + token
     try {
-      const s3 = new AWS.S3()
-      data = await s3.getObject({
+      data = await s3.send(new GetObjectCommand({
         Bucket: this.s3bucket,
         Key: s3key
-      }).promise()
+      }))
     }
     catch (err) {
-      if (err.code == 'NoSuchKey') {
+      if (err.name == 'NoSuchKey') {
         let msg = `Tried looking up phone for a non-existent user token ${s3key}`
         logger.error(msg)
         throw err
@@ -73,7 +75,7 @@ class PhoneTokenService {
       }
     }
     logger.debug(`Retrieved user token at s3://${this.s3bucket}/${s3key}`)
-    return data.Body.toString()
+    return await data.Body.transformToString()
   }
 
   // to associate a phone number with a Alexa ID, it is a two step process.
@@ -89,14 +91,13 @@ class PhoneTokenService {
     let data = null
     const s3key = this.s3prefixAlexaUserIds + alexaUserId
     try {
-      const s3 = new AWS.S3()
-      data = await s3.getObject({
+      data = await s3.send(new GetObjectCommand({
         Bucket: this.s3bucket,
         Key: s3key
-      }).promise()
+      }))
     }
     catch (err) {
-      if (err.code == 'NoSuchKey') {
+      if (err.name == 'NoSuchKey') {
         let msg = `Tried looking a non-existent alexa user id ${s3key}`
         logger.debug(msg)
         return ''
@@ -107,7 +108,7 @@ class PhoneTokenService {
       }
     }
     logger.debug(`Retrieved token from alexa user id file at s3://${this.s3bucket}/${s3key}`)
-    return data.Body.toString()
+    return await data.Body.transformToString()
   }
 }
 
@@ -140,14 +141,13 @@ async function lookupToken(bucket, s3prefix, e164) {
   // plus symbol on s3 may cause issues
   const s3key = s3prefix + e164.replace('+', 'P')
   try {
-    const s3 = new AWS.S3()
-    data = await s3.getObject({
+    data = await s3.send(new GetObjectCommand({
       Bucket: bucket,
       Key: s3key
-    }).promise()
+    }))
   }
   catch (err) {
-    if (err.code == 'NoSuchKey') {
+    if (err.name == 'NoSuchKey') {
       return null
     } else {
       let msg = `Error reading user token at s3://${bucket}/${s3key}: ${err}`
@@ -156,19 +156,18 @@ async function lookupToken(bucket, s3prefix, e164) {
     }
   }
   logger.debug(`Successfully retrieved user token from e164`)
-  return data.Body.toString()
+  return await data.Body.transformToString()
 }
 
 async function putS3(bucket, s3key, body) {
   try {
-    const s3 = new AWS.S3()
-    let resp = await s3.putObject({
+    await s3.send(new PutObjectCommand({
       Bucket: bucket,
       Key: s3key,
       ServerSideEncryption: 'AES256',
       Body: body,
       ContentType: 'text/plain'
-    }).promise()
+    }))
   }
   catch (err) {
     logger.error(`Error updating s3://${bucket}/(key masked):`, err)
