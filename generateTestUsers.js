@@ -1,4 +1,5 @@
-// $ AWS_ENV= AWS_REGION=us-east-1 iam-starter --role role-ops-devops --profile fpwdev --command ssm-starter --ssm-name /fpw/ --command node generateTestUsers.js
+// $ export AWS_PROFILE=csdev AWS_REGION=us-east-1
+// $ USERTOKEN_HASH_HMAC="$(aws ssm get-parameter --name /fpw/USERTOKEN_HASH_HMAC --with-decryption --query Parameter.Value --output text)" node generateTestUsers.js
 
 async function getTokens(phones) {
   let tokens = []
